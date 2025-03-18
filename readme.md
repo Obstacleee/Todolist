@@ -290,9 +290,15 @@ En plus des fonctionnalités principales, nous avons ajouté :
 
 Ces ajouts améliorent l’expérience utilisateur et offrent une base solide pour une éventuelle extension (par exemple, intégration d’une sauvegarde ou d’une interface graphique).
 
----
+## 5. Contributions
 
-Ce rapport décrit en détail la démarche de conception et d’implémentation de l'application TodoList en Java. Chaque choix technique et chaque extrait de code a été pensé pour garantir la modularité, la clarté et la facilité de maintenance du projet.
+- [Delon Lucas](https://github.com/Obstacleee) - A travaillé sur la classe `Task` , `Category`, `TodoList`, `TodoApp` et a rédigé le rapport et la branche `main`.
+- **Typhene SCHOUAMA-ASSAM** - Était dans le groupe de Delon Lucas.
 
-Fin du rapport.
+
+## 6. Références
+
+- [Documentation officielle Java](https://docs.oracle.com/en/java/)
+- [Guide de style Google Java](https://google.github.io/styleguide/javaguide.html)
+- [Codes ANSI pour les couleurs](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
 
