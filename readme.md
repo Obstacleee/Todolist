@@ -290,9 +290,7 @@ En plus des fonctionnalités principales, nous avons ajouté :
 
 Ces ajouts améliorent l’expérience utilisateur et offrent une base solide pour une éventuelle extension (par exemple, intégration d’une sauvegarde ou d’une interface graphique).
 
----
+## 5. Auteur
 
-Ce rapport décrit en détail la démarche de conception et d’implémentation de l'application TodoList en Java. Chaque choix technique et chaque extrait de code a été pensé pour garantir la modularité, la clarté et la facilité de maintenance du projet.
-
-Fin du rapport.
-
+- **Lucas Delon** - [GitHub](https://github.com/Obstacleee)
+- **Typhene** 
