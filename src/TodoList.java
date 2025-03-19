@@ -9,15 +9,13 @@ public class TodoList {
         tasks = new ArrayList<>();
     }
 
-    // Ajoute une nouvelle tâche à la liste
     public void addTask(Task task) {
         tasks.add(task);
     }
 
-    // Retourne la liste triée avec les tâches urgentes en priorité, puis par date d'échéance
+    // Retourne la liste triée (les tâches urgentes en premier, puis par date)
     public List<Task> getTasks() {
         tasks.sort(new Comparator<Task>() {
-            @Override
             public int compare(Task t1, Task t2) {
                 if (t1.isUrgent() && !t2.isUrgent()) return -1;
                 if (!t1.isUrgent() && t2.isUrgent()) return 1;
@@ -27,14 +25,12 @@ public class TodoList {
         return tasks;
     }
 
-    // Marque une tâche comme effectuée
     public void markTaskDone(int index) {
         if (index >= 0 && index < tasks.size()) {
             tasks.get(index).setDone(true);
         }
     }
 
-    // Permet de reporter une tâche d'un nombre de jours donné
     public void postponeTask(int index, int days) {
         if (index >= 0 && index < tasks.size()) {
             Task task = tasks.get(index);
@@ -42,15 +38,20 @@ public class TodoList {
         }
     }
 
-    // Marque une tâche comme urgente
     public void markTaskUrgent(int index) {
         if (index >= 0 && index < tasks.size()) {
             tasks.get(index).setUrgent(true);
         }
     }
 
-    // Supprime les tâches complétées
-    public void removeCompletedTasks() {
-        tasks.removeIf(Task::isDone);
+    public void removeTask(int index) {
+        if (index >= 0 && index < tasks.size()) {
+            tasks.remove(index);
+        }
+    }
+
+    // Remplace la liste actuelle des tâches (utilisé lors du chargement depuis le fichier)
+    public void replaceTasks(List<Task> tasks) {
+        this.tasks = tasks;
     }
 }
