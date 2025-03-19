@@ -1,5 +1,4 @@
-
-# Rapport sur la réalisation d'une TodoList en Java
+# Rapport sur la réalisation d'une TodoList V2 en Java
 
 Ce document présente la conception et l’implémentation d’une application TodoList en Java. Le projet a été développé afin de gérer des tâches via la console, avec des fonctionnalités telles que la création de tâches, leur validation, report, marquage comme urgent, et affichage avec une couleur spécifique selon la catégorie.
 
@@ -292,13 +291,10 @@ Ces ajouts améliorent l’expérience utilisateur et offrent une base solide po
 
 ## 5. Contributions
 
-- [Delon Lucas](https://github.com/Obstacleee) - A travaillé sur la classe `Task` , `Category`, `TodoList`, `TodoApp` et a rédigé le rapport et la branche `main`.
-- **Typhene SCHOUAMA-ASSAM** - Était dans le groupe de Delon Lucas.
-
+- [Delon Lucas](https://github.com/Obstacleee) - A travaillé sur la classe `Task`, `Category`, `TodoList`, `TodoApp` et a rédigé le rapport et la branche `main`.
 
 ## 6. Références
 
 - [Documentation officielle Java](https://docs.oracle.com/en/java/)
 - [Guide de style Google Java](https://google.github.io/styleguide/javaguide.html)
 - [Codes ANSI pour les couleurs](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
-
