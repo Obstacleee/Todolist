@@ -1,6 +1,11 @@
-import java.io.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import javax.crypto.Cipher;
@@ -11,7 +16,22 @@ import java.util.Base64;
 public class JsonHandler {
     public static final String FILE_NAME = "tache.json";
 
-    // Génère une clé secrète à partir d'un mot de passe
+    // Adapter pour sérialiser/désérialiser LocalDate avec Gson
+    private static class LocalDateAdapter implements com.google.gson.JsonSerializer<LocalDate>, com.google.gson.JsonDeserializer<LocalDate> {
+        private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        @Override
+        public com.google.gson.JsonElement serialize(LocalDate src, java.lang.reflect.Type typeOfSrc, com.google.gson.JsonSerializationContext context) {
+            return new com.google.gson.JsonPrimitive(src.format(formatter));
+        }
+
+        @Override
+        public LocalDate deserialize(com.google.gson.JsonElement json, java.lang.reflect.Type typeOfT, com.google.gson.JsonDeserializationContext context) {
+            return LocalDate.parse(json.getAsString(), formatter);
+        }
+    }
+
+    // Méthode utilitaire pour générer une clé AES à partir d'un mot de passe
     private static SecretKeySpec getSecretKey(String myKey) throws Exception {
         byte[] key = myKey.getBytes("UTF-8");
         MessageDigest sha = MessageDigest.getInstance("SHA-256");
@@ -19,7 +39,7 @@ public class JsonHandler {
         return new SecretKeySpec(key, "AES");
     }
 
-    // Chiffre une chaîne de caractères avec AES/ECB/PKCS5Padding
+    // Chiffrement AES
     public static String encrypt(String strToEncrypt, String secret) throws Exception {
         SecretKeySpec secretKey = getSecretKey(secret);
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -28,7 +48,7 @@ public class JsonHandler {
         return Base64.getEncoder().encodeToString(encrypted);
     }
 
-    // Déchiffre une chaîne de caractères avec AES/ECB/PKCS5Padding
+    // Déchiffrement AES
     public static String decrypt(String strToDecrypt, String secret) throws Exception {
         SecretKeySpec secretKey = getSecretKey(secret);
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -37,30 +57,27 @@ public class JsonHandler {
         return new String(decrypted, "UTF-8");
     }
 
-    // Sauvegarde la liste des tâches dans le fichier JSON (avec ou sans chiffrement)
+    // Sauvegarde la liste des tâches dans le fichier JSON
     public static void saveTasks(List<Task> tasks, boolean encryptFlag, String password) {
         try {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[\n");
-            for (int i = 0; i < tasks.size(); i++) {
-                sb.append(tasks.get(i).toJson());
-                if (i < tasks.size() - 1) {
-                    sb.append(",\n");
-                }
-            }
-            sb.append("\n]");
-            String json = sb.toString();
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+                    .setPrettyPrinting()
+                    .create();
+            String json = gson.toJson(tasks);
             if (encryptFlag) {
                 json = encrypt(json, password);
             }
             Files.write(Paths.get(FILE_NAME), json.getBytes("UTF-8"));
             System.out.println("Tâches sauvegardées dans " + FILE_NAME);
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Erreur lors de la sauvegarde : " + e.getMessage());
+        } catch (Exception ex) {
+            System.err.println("Erreur de chiffrement : " + ex.getMessage());
         }
     }
 
-    // Charge la liste des tâches depuis le fichier JSON (avec ou sans déchiffrement)
+    // Charge la liste des tâches depuis le fichier JSON
     public static List<Task> loadTasks(boolean decryptFlag, String password) {
         List<Task> tasks = new ArrayList<>();
         try {
@@ -74,28 +91,16 @@ public class JsonHandler {
             if (decryptFlag) {
                 json = decrypt(json, password);
             }
-            // Suppression des espaces superflus et retrait des crochets
-            json = json.trim();
-            if (json.startsWith("[")) {
-                json = json.substring(1);
-            }
-            if (json.endsWith("]")) {
-                json = json.substring(0, json.length() - 1);
-            }
-            // Découpage en objets JSON individuels
-            String[] taskJsonArray = json.split("},");
-            for (int i = 0; i < taskJsonArray.length; i++) {
-                String taskJson = taskJsonArray[i].trim();
-                if (!taskJson.endsWith("}")) {
-                    taskJson = taskJson + "}";
-                }
-                if (taskJson.length() == 0) continue;
-                Task task = Task.fromJson(taskJson);
-                tasks.add(task);
-            }
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+                    .create();
+            tasks = gson.fromJson(json, new TypeToken<List<Task>>(){}.getType());
             return tasks;
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Erreur lors du chargement : " + e.getMessage());
+            return tasks;
+        } catch (Exception ex) {
+            System.err.println("Erreur de déchiffrement : " + ex.getMessage());
             return tasks;
         }
     }

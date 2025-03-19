@@ -1,6 +1,6 @@
-# Rapport sur la réalisation d'une TodoList V2 en Java avec Gestion de Fichier
+# Rapport sur la réalisation d'une TodoListV2 en Java 
 
-Ce document présente la conception et l’implémentation d’une application TodoList en Java. Le projet a été développé pour gérer des tâches via la console, avec des fonctionnalités telles que la création de tâches, leur validation, report, marquage comme urgent, et affichage avec une couleur spécifique selon la catégorie. De plus, l'application persiste automatiquement les tâches dans un fichier JSON (**tache.json**) et les recharge au démarrage, avec une option de chiffrement (basée sur les API standard de Java).
+Ce document présente la conception et l’implémentation d’une application TodoList en Java. Le projet a été développé pour gérer des tâches via la console, avec des fonctionnalités telles que la création de tâches, leur validation, report, marquage comme urgent, et affichage avec une couleur spécifique selon la catégorie. La persistance des données est assurée par un fichier JSON (**tache.json**) géré à l'aide de Gson. De plus, une option de chiffrement (AES) permet de sécuriser le fichier en cas de vol.
 
 ## 1. Introduction
 
@@ -11,9 +11,10 @@ L’objectif de ce projet était de développer une application console en Java 
 - **Report d'une tâche** : modifier la date d’échéance d'une tâche.
 - **Marquage comme urgent** : les tâches urgentes apparaissent en premier dans la liste.
 - **Affichage coloré** : chaque catégorie est associée à une couleur (via les codes ANSI) pour améliorer la lisibilité.
-- **Gestion de fichier** : les tâches sont sauvegardées automatiquement dans un fichier JSON (**tache.json**) et rechargées au démarrage. Une option de chiffrement permet de sécuriser le fichier en cas de vol.
+- **Persistance automatique** : les tâches sont sauvegardées dans un fichier JSON (**tache.json**) et rechargées automatiquement au démarrage.
+- **Chiffrement optionnel** : le fichier peut être chiffré via AES pour protéger les données.
 
-Ce rapport détaille le découpage en classes, les choix techniques ainsi que l’implémentation de la gestion de fichier.
+Ce rapport détaille le découpage en classes, les choix techniques et présente des extraits de code commentés.
 
 ## 2. Architecture et Choix Techniques
 
@@ -22,9 +23,9 @@ Ce rapport détaille le découpage en classes, les choix techniques ainsi que l�
 L’application est structurée autour de plusieurs classes principales :
 
 - **Category** : une énumération définissant les catégories de tâches et leur couleur associée.
-- **Task** : une classe modélisant une tâche avec ses attributs (nom, date, catégorie, état, urgence) et une méthode `toString()` pour l’affichage.
-- **TodoList** : une classe qui gère une collection de tâches. Elle offre des méthodes pour ajouter, modifier (validation, report, marquage urgent) et trier les tâches.
-- **JsonHandler** : une classe qui gère la persistance des tâches dans un fichier JSON (**tache.json**). Elle réalise la sauvegarde et le chargement, et peut appliquer un chiffrement optionnel à l’aide d’AES.
+- **Task** : une classe modélisant une tâche avec ses attributs (nom, date d’échéance, catégorie, état, urgence) et une méthode `toString()` pour l’affichage.
+- **TodoList** : une classe qui gère une collection de tâches et offre des méthodes pour les ajouter, modifier (validation, report, marquage urgent) et trier.
+- **JsonHandler** : une classe qui gère la persistance des tâches dans un fichier JSON (**tache.json**). Elle utilise Gson pour la sérialisation/désérialisation et peut appliquer un chiffrement AES optionnel.
 - **TodoApp** : la classe principale contenant la méthode `main` qui gère l’interaction avec l’utilisateur via un menu en console. Elle intègre la gestion de fichier pour charger et sauvegarder automatiquement les tâches.
 
 ### 2.2 Gestion des Couleurs
@@ -34,22 +35,22 @@ Chaque catégorie de tâche est associée à une couleur via des codes ANSI :
 - **BOULOT** en bleu
 - **FAMILLE** en magenta
 
-Cette approche permet un affichage visuel distinctif lors de l’affichage des tâches dans la console.
+Cela permet un affichage visuel distinctif dans la console.
 
-### 2.3 Gestion de la Persistance (Fichier JSON)
+### 2.3 Persistance via Gson
 
-Pour assurer la persistance des données :
-- **Chargement automatique** : Lors du démarrage, l’application lit le fichier **tache.json** (s'il existe) et recharge la liste des tâches.
-- **Sauvegarde automatique** : Toute modification (ajout, modification, suppression) entraîne une mise à jour immédiate du fichier **tache.json**.
-- **Chiffrement optionnel** : L’application permet de chiffrer le contenu du fichier à l’aide d’AES, garantissant la sécurité des données en cas de vol. L’activation du chiffrement et le mot de passe sont définis dans la classe `TodoApp`.
+Pour assurer la persistance des données, le fichier **tache.json** est :
+- **Chargé automatiquement** au démarrage de l'application (si le fichier existe, il est désérialisé à l'aide de Gson).
+- **Mis à jour automatiquement** après chaque modification (ajout, report, marquage ou suppression) en sérialisant la liste des tâches avec Gson.
+- **Optionnellement chiffré** : une option permet de chiffrer le contenu du fichier à l'aide d'AES pour sécuriser les données.
 
 ### 2.4 Tri et Affichage
 
-Les tâches sont triées selon deux critères :
-1. Les tâches marquées comme urgentes apparaissent en premier.
-2. Les tâches sont ensuite triées par date d’échéance.
+Les tâches sont triées de façon à afficher :
+1. Les tâches marquées comme urgentes en premier.
+2. Les tâches ensuite par date d’échéance.
 
-Ce tri dynamique permet de mettre en avant les tâches les plus critiques.
+Ce tri garantit que les tâches les plus critiques sont toujours mises en avant.
 
 ## 3. Implémentation Détaillée
 
@@ -80,7 +81,7 @@ public enum Category {
 ```
 
 **Pourquoi ce choix ?**  
-L’utilisation d’une énumération limite les valeurs possibles et centralise la configuration des couleurs pour chaque catégorie.
+L’énumération permet de limiter les valeurs possibles et centralise la configuration des couleurs pour chaque catégorie.
 
 ### 3.2 Fichier : Task.java
 
@@ -98,8 +99,8 @@ public class Task {
         this.name = name;
         this.dueDate = dueDate;
         this.category = category;
-        this.done = false;   // Par défaut, la tâche n'est pas faite
-        this.urgent = false; // Par défaut, la tâche n'est pas urgente
+        this.done = false;
+        this.urgent = false;
     }
 
     public String getName() {
@@ -145,7 +146,7 @@ public class Task {
 ```
 
 **Pourquoi ce choix ?**  
-La classe `Task` encapsule toutes les informations nécessaires pour une tâche. La méthode `toString()` fournit un affichage complet et coloré pour une lecture aisée dans la console.
+La classe `Task` encapsule toutes les informations d’une tâche. La méthode `toString()` permet d’afficher rapidement toutes les informations de façon lisible et colorée.
 
 ### 3.3 Fichier : TodoList.java
 
@@ -161,12 +162,12 @@ public class TodoList {
         tasks = new ArrayList<>();
     }
 
-    // Ajoute une nouvelle tâche à la liste
+    // Ajoute une nouvelle tâche
     public void addTask(Task task) {
         tasks.add(task);
     }
 
-    // Retourne la liste triée : tâches urgentes d'abord, puis par date d'échéance
+    // Retourne la liste triée : tâches urgentes en premier, puis par date d’échéance
     public List<Task> getTasks() {
         tasks.sort(new Comparator<Task>() {
             @Override
@@ -201,12 +202,12 @@ public class TodoList {
         }
     }
 
-    // Supprime les tâches complétées de la liste
+    // Supprime les tâches complétées
     public void removeCompletedTasks() {
         tasks.removeIf(Task::isDone);
     }
 
-    // Remplace la liste actuelle des tâches (utilisé lors du chargement du fichier)
+    // Remplace la liste actuelle des tâches (utilisé lors du chargement depuis le fichier)
     public void replaceTasks(List<Task> tasks) {
         this.tasks = tasks;
     }
@@ -214,12 +215,15 @@ public class TodoList {
 ```
 
 **Pourquoi ce choix ?**  
-La classe `TodoList` centralise la gestion des tâches, offre des méthodes dédiées pour les modifications et assure le tri dynamique afin de mettre en avant les tâches urgentes.
+La classe `TodoList` centralise la gestion des tâches et propose des méthodes dédiées pour leur modification et leur tri dynamique.
 
 ### 3.4 Fichier : JsonHandler.java
 
 ```java
-import java.io.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -261,23 +265,17 @@ public class JsonHandler {
     // Sauvegarde la liste des tâches dans le fichier JSON (avec ou sans chiffrement)
     public static void saveTasks(List<Task> tasks, boolean encryptFlag, String password) {
         try {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[\n");
-            for (int i = 0; i < tasks.size(); i++) {
-                sb.append(tasks.get(i).toJson());
-                if (i < tasks.size() - 1) {
-                    sb.append(",\n");
-                }
-            }
-            sb.append("\n]");
-            String json = sb.toString();
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            String json = gson.toJson(tasks);
             if (encryptFlag) {
                 json = encrypt(json, password);
             }
             Files.write(Paths.get(FILE_NAME), json.getBytes("UTF-8"));
             System.out.println("Tâches sauvegardées dans " + FILE_NAME);
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Erreur lors de la sauvegarde : " + e.getMessage());
+        } catch (Exception ex) {
+            System.err.println("Erreur de chiffrement : " + ex.getMessage());
         }
     }
 
@@ -295,27 +293,14 @@ public class JsonHandler {
             if (decryptFlag) {
                 json = decrypt(json, password);
             }
-            // Nettoyage du JSON et extraction des objets individuels
-            json = json.trim();
-            if (json.startsWith("[")) {
-                json = json.substring(1);
-            }
-            if (json.endsWith("]")) {
-                json = json.substring(0, json.length() - 1);
-            }
-            String[] taskJsonArray = json.split("},");
-            for (int i = 0; i < taskJsonArray.length; i++) {
-                String taskJson = taskJsonArray[i].trim();
-                if (!taskJson.endsWith("}")) {
-                    taskJson = taskJson + "}";
-                }
-                if (taskJson.length() == 0) continue;
-                Task task = Task.fromJson(taskJson);
-                tasks.add(task);
-            }
+            Gson gson = new GsonBuilder().create();
+            tasks = gson.fromJson(json, new TypeToken<List<Task>>(){}.getType());
             return tasks;
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Erreur lors du chargement : " + e.getMessage());
+            return tasks;
+        } catch (Exception ex) {
+            System.err.println("Erreur de déchiffrement : " + ex.getMessage());
             return tasks;
         }
     }
@@ -323,7 +308,7 @@ public class JsonHandler {
 ```
 
 **Pourquoi ce choix ?**  
-La classe `JsonHandler` assure la persistance des données dans le fichier **tache.json** sans dépendance externe. Elle gère la sérialisation/désérialisation en construisant et en analysant manuellement le format JSON, avec une option de chiffrement pour sécuriser les données.
+La classe `JsonHandler` utilise désormais Gson pour sérialiser et désérialiser la liste des tâches. Elle gère aussi le chiffrement AES optionnel pour sécuriser le fichier de persistance (**tache.json**).
 
 ### 3.5 Fichier : TodoApp.java (Main)
 
@@ -425,25 +410,25 @@ public class TodoApp {
 ```
 
 **Pourquoi ce choix ?**  
-La classe `TodoApp` sert de point d'entrée à l'application. Elle affiche un menu interactif, lit les entrées utilisateur et déclenche les opérations sur la liste des tâches. Chaque modification entraîne une sauvegarde immédiate dans le fichier **tache.json** pour garantir la persistance des données.
+La classe `TodoApp` est le point d'entrée de l'application. Elle charge automatiquement la liste des tâches depuis **tache.json** et assure une sauvegarde immédiate après chaque modification pour garantir la persistance des données.
 
 ## 4. Fonctionnalités Supplémentaires et Conclusion
 
 En plus des fonctionnalités principales, nous avons intégré :
 
-- **Persistance automatique** : Le fichier **tache.json** est chargé au démarrage et mis à jour immédiatement après chaque modification.
-- **Chiffrement optionnel** : La sauvegarde peut être sécurisée par chiffrement AES afin de protéger les données en cas de vol.
-- **Tri dynamique** : Les tâches urgentes sont affichées en premier, suivies des tâches triées par date d’échéance.
+- **Persistance automatique** : le fichier **tache.json** est chargé au démarrage et mis à jour après chaque modification.
+- **Chiffrement optionnel** : la possibilité de chiffrer le fichier avec AES pour protéger les données sensibles.
+- **Tri dynamique** : les tâches urgentes sont toujours affichées en premier, puis triées par date d’échéance.
 
-Ces ajouts améliorent l’expérience utilisateur et offrent une base solide pour une éventuelle extension (par exemple, une interface graphique ou des fonctionnalités supplémentaires).
+Ces choix garantissent une application robuste et facilement extensible, pouvant être adaptée à de futures évolutions (interface graphique, nouvelles fonctionnalités, etc.).
 
 ## 5. Contributions
 
-- [Delon Lucas](https://github.com/Obstacleee) - A travaillé sur les classes `Task`, `Category`, `TodoList`, `JsonHandler`, `TodoApp` et a rédigé le rapport.
+- [Delon Lucas](https://github.com/Obstacleee) – A travaillé sur les classes `Task`, `Category`, `TodoList`, `JsonHandler`, `TodoApp` et a rédigé ce rapport.
 
 ## 6. Références
 
 - [Documentation officielle Java](https://docs.oracle.com/en/java/)
 - [Guide de style Google Java](https://google.github.io/styleguide/javaguide.html)
 - [Codes ANSI pour les couleurs](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
-
+- [Gson – Google JSON Library](https://github.com/google/gson)
